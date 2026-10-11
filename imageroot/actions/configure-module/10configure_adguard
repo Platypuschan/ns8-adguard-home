@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Store the module settings and update the managed keys of AdGuardHome.yaml.
+
+import json
+import os
+import subprocess
+import sys
+
+import agent
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "pypkg"))
+import adguard_setup
+
+agent.set_weight(os.path.basename(__file__), 0)
+
+SERVICE = "adguard.service"
+
+data = json.load(sys.stdin)
+
+
+def systemctl(*args, check=True):
+    return subprocess.run(["systemctl", "--user", *args], check=check).returncode
+
+
+def is_active():
+    return systemctl("is-active", "--quiet", SERVICE, check=False) == 0
+
+
+def fail(field, value, error):
+    agent.set_status("validation-failed")
+    json.dump([{"field": field, "parameter": field, "value": value, "error": error}], fp=sys.stdout)
+    sys.exit(2)
+
+
+with adguard_setup.settings_lock():
+    try:
+        settings = adguard_setup.merge_request(
+            data, adguard_setup.ensure_settings(), adguard_setup.local_addresses()
+        )
+    except adguard_setup.SettingsError as error:
+        fail(error.field, error.value, error.error)
+
+    active = is_active()
+    stopped = False
+    # Port 53 must be free on the new listen addresses. While AdGuard Home
+    # runs with the same addresses it holds the port itself, so the check is
+    # skipped; with other addresses it is stopped first (it is restarted with
+    # the new configuration anyway).
+    if not active or sorted(adguard_setup.configured_bind_hosts() or []) != sorted(settings["dns_bind_hosts"]):
+        if active:
+            systemctl("stop", SERVICE)
+            stopped = True
+        busy = [host for host in settings["dns_bind_hosts"] if adguard_setup.port_in_use(host)]
+        if busy:
+            if stopped:
+                systemctl("start", SERVICE)
+            print(f"DNS port {adguard_setup.DNS_PORT} is already in use on {', '.join(busy)}", file=sys.stderr)
+            fail("dns_bind_hosts", ",".join(busy), "dns_port_in_use")
+
+    adguard_setup.save_settings(settings)
+    config = adguard_setup.prepare_config(settings, os.environ["TCP_PORT"])
+    if config is not None:
+        if is_active():
+            systemctl("stop", SERVICE)
+        adguard_setup.save_config(config)

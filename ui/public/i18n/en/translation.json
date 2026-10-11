@@ -1,0 +1,88 @@
+{
+  "common": {
+    "required": "Required",
+    "work_in_progress": "Work in progress",
+    "processing": "Processing..."
+  },
+  "status": {
+    "title": "Status",
+    "app_instance": "App instance",
+    "services": "Service | Services",
+    "app_images": "App image | App images",
+    "app_volumes": "App volume | App volumes",
+    "installation_node": "Installation node",
+    "node": "Node",
+    "name": "Name",
+    "size": "Size",
+    "created": "Created",
+    "mount": "Mount",
+    "no_services": "No services",
+    "no_images": "No images",
+    "no_volumes": "No volumes"
+  },
+  "settings": {
+    "title": "Settings",
+    "configure_instance": "Configure {instance}",
+    "save": "Save",
+    "lets_encrypt": "Request LE Certificate",
+    "http_to_https": "Force HTTPS",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "configuring": "Configuring",
+    "domain_already_used_in_traefik": "Domain already used in traefik",
+    "host_pattern": "Must be a valid fully qualified domain name",
+    "host_format": "Must be a valid fully qualified domain name",
+    "instance_configuration": "Configure AdGuard Home",
+    "adguard_fqdn": "AdGuard Home hostname (FQDN)",
+    "web_title": "AdGuard Home web interface",
+    "web_description": "Manage filters, upstream DNS servers, clients and access settings in the AdGuard Home web interface. Log in with the user and password below.",
+    "web_url": "Web interface",
+    "admin_user": "Username",
+    "admin_password": "Password",
+    "doh_url": "DNS-over-HTTPS",
+    "doh_url_helper": "Use this URL as encrypted DNS server in browsers and on phones.",
+    "open_web": "Open AdGuard Home",
+    "dns_bind_hosts": "DNS listen addresses",
+    "dns_bind_hosts_helper": "IP addresses of this node where DNS is served on port 53, separated by commas. 0.0.0.0 listens on all IPv4 and IPv6 addresses. Clients outside private networks are refused until you allow them in AdGuard Home (Settings > DNS settings > Access settings).",
+    "node_addresses": "Addresses of this node: {addresses}.",
+    "dns_bind_hosts_empty": "Enter at least one address",
+    "invalid_ip_address": "Not a valid IP address",
+    "duplicate_ip_address": "Address entered twice",
+    "unspecified_address_must_be_alone": "0.0.0.0 or :: listens on all addresses and cannot be combined with other addresses",
+    "ip_address_not_on_node": "This address is not configured on this node",
+    "too_many_dns_bind_hosts": "At most 16 addresses",
+    "dns_port_in_use": "Port 53 is already used by another DNS server (for example a Samba domain controller or dnsmasq). Choose other addresses",
+    "new_admin_password": "New admin password",
+    "new_admin_password_helper": "Leave empty to keep the current password.",
+    "password_too_long": "Must be at most 72 bytes long",
+    "admin_password_maxLength": "Must be at most 72 characters long"
+  },
+  "about": {
+    "title": "About"
+  },
+  "task": {
+    "cannot_create_task": "Cannot create task {action}"
+  },
+  "action": {
+    "get-status": "Get status",
+    "get-configuration": "Get configuration",
+    "configure-module": "Configure module",
+    "get-module-info": "Get module info",
+    "get-name": "Get name",
+    "list-backup-repositories": "List backup repositories",
+    "list-backups": "List backups",
+    "list-installed-modules": "List installed modules"
+  },
+  "error": {
+    "error": "Error",
+    "generic_error": "Something went wrong",
+    "validation_error": "Validation error",
+    "network_error": "Network error",
+    "network_timeout": "Network timeout",
+    "401": "Invalid authentication",
+    "403": "Operation not authorized",
+    "404": "Resource not found",
+    "cannot_retrieve_module_info": "Cannot retrieve module info",
+    "cannot_retrieve_installed_modules": "Cannot retrieve installed modules"
+  }
+}

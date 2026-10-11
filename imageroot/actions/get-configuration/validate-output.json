@@ -1,0 +1,75 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Get AdGuard Home settings",
+    "$id": "http://nethserver.org/json-schema/task/output/adguard-home/get-configuration",
+    "description": "Get the AdGuard Home settings and the admin login for the web interface",
+    "examples": [
+        {
+            "host": "adguard.domain.org",
+            "http2https": true,
+            "lets_encrypt": true,
+            "url": "https://adguard.domain.org/",
+            "doh_url": "https://adguard.domain.org/dns-query",
+            "admin_user": "admin",
+            "admin_password": "secret",
+            "dns_bind_hosts": [
+                "0.0.0.0"
+            ],
+            "node_addresses": [
+                "192.168.1.10",
+                "fd00::10"
+            ]
+        }
+    ],
+    "type": "object",
+    "required": [
+        "host",
+        "http2https",
+        "lets_encrypt",
+        "url",
+        "doh_url",
+        "admin_user",
+        "admin_password",
+        "dns_bind_hosts",
+        "node_addresses"
+    ],
+    "properties": {
+        "host": {
+            "type": "string"
+        },
+        "lets_encrypt": {
+            "type": "boolean"
+        },
+        "http2https": {
+            "type": "boolean"
+        },
+        "url": {
+            "type": "string",
+            "description": "Web interface URL; empty before the first configuration"
+        },
+        "doh_url": {
+            "type": "string",
+            "description": "DNS-over-HTTPS URL; empty before the first configuration"
+        },
+        "admin_user": {
+            "type": "string"
+        },
+        "admin_password": {
+            "type": "string",
+            "description": "Empty before the first configuration"
+        },
+        "dns_bind_hosts": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "node_addresses": {
+            "type": "array",
+            "description": "IP addresses of this node, except loopback and link-local ones",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}
