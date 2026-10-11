@@ -178,6 +178,19 @@ Web interface is served through Traefik
     ${body}    ${status} =    Route    GET    /control/install/get_addresses
     Should Not Be Equal    ${status}    200
 
+Traefik removes the Range header
+    # CVE-2026-78667: many small ranges make Go's http.FileServer burn CPU.
+    # AdGuard Home itself honours Range (206); through Traefik the header is
+    # gone (200, full page). In the update scenario this checks the route
+    # that update-module.d re-created.
+    ${port} =    Execute Command    runagent -m ${module_id} printenv TCP_PORT
+    ${direct} =    Execute Command    curl -sS --max-time 10 -o /dev/null -w '\%{http_code}' -H 'Range: bytes=0-9' 'http://127.0.0.1:${port}/login.html'
+    Should Be Equal    ${direct}    206
+    ${output} =    Execute Command    curl -sS --max-time 10 --resolve ${HOST}:80:127.0.0.1 -o /dev/null -w '\%{http_code} \%{size_download}' -H 'Range: bytes=0-9' 'http://${HOST}/login.html'
+    ${status}    ${size} =    Evaluate    $output.split()
+    Should Be Equal    ${status}    200
+    Should Be True    int($size) > 10    partial content through Traefik: ${output}
+
 Wrong password is rejected
     ${body}    ${status} =    Login to AdGuard Home    not-the-password
     Should Be Equal    ${status}    403

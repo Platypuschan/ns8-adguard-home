@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Re-create the Traefik route of a configured instance, so route changes of
+# a new release (removed request headers) apply without a configure-module
+# run.
+
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "pypkg"))
+import adguard_route
+
+host = os.environ.get("TRAEFIK_HOST", "")
+if host:
+    adguard_route.set_route(
+        host,
+        os.environ.get("TRAEFIK_HTTP2HTTPS") == "True",
+        os.environ.get("TRAEFIK_LETS_ENCRYPT") == "True",
+    )

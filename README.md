@@ -107,6 +107,14 @@ Home, updates the file and starts it again; other keys stay as AdGuard Home
 wrote them. The module settings (admin password, listen addresses) are in
 `state/adguard.json`.
 
+The Traefik route removes the `Range` request header. AdGuard Home
+v0.107.79 is built with Go 1.26.6, whose file server spends excessive CPU
+on a `Range` header with many small ranges (CVE-2026-78667, fixed in Go
+1.26.9). The login page and its assets need no login, so without this anyone
+who can reach the host name could slow down DNS resolution. The web
+interface and DNS-over-HTTPS never need partial responses. `update-module`
+re-creates the route, so updated instances get it too.
+
 The container uses the host network, so AdGuard Home sees the real client
 addresses; NS8 lets rootless services bind ports from 23 up
 (`net.ipv4.ip_unprivileged_port_start`). AdGuard Home runs as root of the
