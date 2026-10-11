@@ -169,6 +169,8 @@ Check data kept by the update
     Should Contain    ${rules}    ||${BLOCKED}^
 
 Web interface is served through Traefik
+    # Without a session: AdGuard Home redirects logged-in users to /
+    Execute Command    rm -f /root/adguard.cookies
     ${body}    ${status} =    Route    GET    /login.html
     Should Be Equal    ${status}    200
     Should Contain    ${body}    <title>Login</title>
