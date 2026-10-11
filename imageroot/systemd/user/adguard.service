@@ -1,0 +1,47 @@
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# AdGuard Home, a network-wide DNS ad and tracker blocker.
+# Most parts of this file come from podman-generate-systemd.
+#
+# The container uses the host network: DNS clients are seen with their real
+# addresses, and AdGuard Home binds port 53 itself (NS8 lets rootless
+# services bind ports from 23 up). The web UI listens on
+# 127.0.0.1:${TCP_PORT} for Traefik (http.address in AdGuardHome.yaml).
+# AdGuard Home runs as root of the rootless container, i.e. as the module
+# user, so the module agent can update its configuration file.
+#
+
+[Unit]
+Description=AdGuard Home DNS server
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%E/state/environment
+WorkingDirectory=%E/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/adguard.pid %t/adguard.ctr-id
+# Without a configuration AdGuard Home would start its setup wizard on
+# 0.0.0.0:3000; configure-module writes the configuration first.
+ExecStartPre=/usr/bin/test -s %E/state/conf/AdGuardHome.yaml
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/adguard.pid \
+    --cidfile %t/adguard.ctr-id --cgroups=no-conmon \
+    --replace -d --name adguard \
+    --network host \
+    --volume %E/state/conf:/opt/adguardhome/conf:Z \
+    --volume adguard-work:/opt/adguardhome/work:Z \
+    ${ADGUARDHOME_IMAGE} \
+    --no-check-update \
+    -c /opt/adguardhome/conf/AdGuardHome.yaml \
+    -w /opt/adguardhome/work
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/adguard.ctr-id -t 30
+SyslogIdentifier=%u
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/adguard.ctr-id
+PIDFile=%t/adguard.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

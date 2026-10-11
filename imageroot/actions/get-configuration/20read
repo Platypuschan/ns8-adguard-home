@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "pypkg"))
+import adguard_setup
+
+json.dump(adguard_setup.configuration(
+    adguard_setup.read_settings(),
+    os.getenv("TRAEFIK_HOST", ""),
+    os.getenv("TRAEFIK_HTTP2HTTPS") == "True",
+    os.getenv("TRAEFIK_LETS_ENCRYPT") == "True",
+    adguard_setup.local_addresses(),
+), fp=sys.stdout)

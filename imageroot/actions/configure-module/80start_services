@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+set -e
+
+# Redirect any output to the journal (stderr)
+exec 1>&2
+
+# enable loads the unit; reset-failed fails on a unit that is not loaded yet.
+systemctl --user enable adguard.service
+# A previous failed start can have hit the start rate limit; clear it first.
+systemctl --user reset-failed adguard.service
+# AdGuard Home reads AdGuardHome.yaml only at start. 10configure_adguard
+# stops it before changing the file; restart it only when the file changed
+# (also in an earlier, failed run), so saving unchanged settings does not
+# interrupt DNS resolution.
+if ! systemctl --user is-active --quiet adguard.service; then
+    systemctl --user start adguard.service
+elif [[ -e adguard-restart-needed ]]; then
+    systemctl --user restart adguard.service
+fi
+rm -f adguard-restart-needed

@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+# Load the new unit file and restart AdGuard Home if it is running: the
+# image may have changed. AdGuard Home migrates its own configuration file
+# to a newer schema at start.
+
+import os
+import subprocess
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "pypkg"))
+import adguard_setup
+
+state_dir = os.environ.get("AGENT_STATE_DIR", ".")
+
+subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
+subprocess.run(["systemctl", "--user", "try-restart", "adguard.service"], check=True)
+# A running AdGuard Home now has the current configuration; a stopped one
+# reads it when it starts.
+try:
+    os.remove(os.path.join(state_dir, adguard_setup.RESTART_FLAG))
+except FileNotFoundError:
+    pass

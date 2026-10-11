@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Configure AdGuard Home",
+    "$id": "http://nethserver.org/json-schema/task/input/adguard-home/configure-module",
+    "description": "Configure the AdGuard Home DNS server",
+    "examples": [
+        {
+            "host": "adguard.domain.org",
+            "http2https": true,
+            "lets_encrypt": true
+        },
+        {
+            "host": "adguard.domain.org",
+            "http2https": true,
+            "lets_encrypt": true,
+            "admin_password": "a new password",
+            "dns_bind_hosts": [
+                "192.168.1.10",
+                "fd00::10"
+            ]
+        }
+    ],
+    "type": "object",
+    "required": [
+        "host",
+        "http2https",
+        "lets_encrypt"
+    ],
+    "properties": {
+        "host": {
+            "type": "string",
+            "description": "Host name of the AdGuard Home web interface and DNS-over-HTTPS endpoint, like 'adguard.domain.org'",
+            "format": "hostname",
+            "pattern": "\\."
+        },
+        "lets_encrypt": {
+            "type": "boolean",
+            "title": "Let's Encrypt certificate",
+            "description": "Request a valid Let's Encrypt certificate."
+        },
+        "http2https": {
+            "type": "boolean",
+            "title": "HTTP to HTTPS redirection",
+            "description": "Redirect all the HTTP requests to HTTPS"
+        },
+        "admin_password": {
+            "type": "string",
+            "title": "Admin password",
+            "description": "New password of the AdGuard Home user 'admin'; omitted or empty keeps the current one (generated on the first configuration). bcrypt uses the first 72 bytes only.",
+            "maxLength": 72
+        },
+        "dns_bind_hosts": {
+            "type": "array",
+            "title": "DNS listen addresses",
+            "description": "IP addresses of this node where AdGuard Home serves DNS on port 53. '0.0.0.0' (the default) listens on all IPv4 and IPv6 addresses and must be the only entry. Omitted keeps the current list.",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 45
+            }
+        }
+    }
+}
