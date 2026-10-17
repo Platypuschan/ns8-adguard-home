@@ -181,3 +181,11 @@ AdGuard Home migrates it to a newer schema itself.
 
 AdGuard Home is developed by AdGuard Software Ltd. under the GPL-3.0.
 This module is not affiliated with AdGuard.
+
+## Minimum NS8 core version
+
+This module requires NS8 core **3.23.0** or newer. This conservative minimum
+matches the core version recorded by the existing successful QEMU installation
+[tests](https://github.com/Platypuschan/ns8-adguard-home/actions/runs/38154896956);
+compatibility with older cores has not been verified. The module image
+declares this requirement in `org.nethserver.min-core`.

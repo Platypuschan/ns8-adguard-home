@@ -50,6 +50,7 @@ buildah config --entrypoint=/ \
 	--label="org.nethserver.authorizations=traefik@node:routeadm node:fwadm" \
 	--label="org.nethserver.tcp-ports-demand=1" \
 	--label="org.nethserver.rootfull=0" \
+	--label="org.nethserver.min-core=3.23.0" \
 	--label="org.nethserver.max-per-node=1" \
 	--label="org.nethserver.images=${adguard_image}" \
 	"${container}"
