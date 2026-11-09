@@ -20,23 +20,23 @@ repository_source="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:
 # the module as ADGUARDHOME_IMAGE. pypkg/AdGuardHome.template.yaml comes from
 # the setup wizard of this release; check it when updating.
 adguard_image="docker.io/adguard/adguardhome:v0.107.80@sha256:e2e1b48c832f7705be915873f95de0d5114de573736441d7f2923a8a6293027c"
-# Keep in sync with the Node.js version used by .github/workflows/validate.yml
-NODE_IMAGE="docker.io/library/node:24.22.2"
-nodebuilder="nodebuilder-adguard-home-${NODE_IMAGE##*:}"
-# Create a new empty container image
+# Both release packaging and CI compile the exact same UI stage.
+# Keep this explicit image pin synchronized with ui/Containerfile (regression-tested).
+NODE_IMAGE="docker.io/library/node:24.22.2-bookworm"
+ui_builder="localhost/adguard-ui-${GITHUB_SHA:-$(git rev-parse --short HEAD)}"
+buildah bud --target ui -t "${ui_builder}" -f ui/Containerfile ui
+ui_container=$(buildah from "${ui_builder}")
 container=$(buildah from scratch)
-
-# Reuse an existing builder container for the same Node.js version, to speed up builds
-if ! buildah containers --format "{{.ContainerName}}" | grep -qx "${nodebuilder}"; then
-	echo "Pulling NodeJS runtime..."
-	buildah from --name "${nodebuilder}" -v "${PWD}:/usr/src:Z" "${NODE_IMAGE}"
-fi
-
-echo "Build static UI files with node..."
-buildah run \
-	--workingdir=/usr/src/ui \
-	"${nodebuilder}" \
-	sh -c "corepack enable && yarn install --immutable && yarn build"
+trap 'buildah rm "${ui_container}" "${container}" >/dev/null' EXIT
+rm -rf ui/dist
+mkdir -p ui/dist
+# Rootless overlay mounts only exist inside Buildah's user namespace. Keep
+# mount, copy and unmount together; the destination remains in the checkout.
+buildah unshare sh -ec '
+  ui_mount=$(buildah mount "$1")
+  trap '\''buildah unmount "$1" >/dev/null'\'' EXIT
+  cp -a "${ui_mount}/app/dist/." "$2/"
+' sh "${ui_container}" "${PWD}/ui/dist"
 
 # Add imageroot directory to the container image
 buildah add "${container}" imageroot /imageroot

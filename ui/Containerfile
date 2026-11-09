@@ -1,5 +1,12 @@
-FROM node:24.22.2-bookworm
-RUN corepack enable
+FROM node:24.22.2-bookworm AS toolchain
+# The devcontainer has no package.json until its bind mount is attached.
+RUN npm install --global --force @yarnpkg/cli-dist@4.18.1
 WORKDIR /app
+
+FROM toolchain AS ui
+COPY . /app
+RUN ./build.sh
+
+FROM toolchain AS dev
 EXPOSE 8080
 ENTRYPOINT ["./container-entrypoint.sh"]

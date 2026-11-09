@@ -3,7 +3,7 @@
   SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <template>
-  <cv-grid fullWidth>
+  <cv-grid full-width>
     <cv-row>
       <cv-column class="page-title">
         <h2>{{ $t("settings.title") }}</h2>
@@ -15,7 +15,7 @@
           kind="error"
           :title="$t('action.get-configuration')"
           :description="error.getConfiguration"
-          :showCloseButton="false"
+          :show-close-button="false"
         />
       </cv-column>
     </cv-row>
@@ -30,21 +30,21 @@
           <cv-text-input
             id="adguard-url"
             :label="$t('settings.web_url')"
-            :value="url"
+            :model-value="url"
             readonly
             class="mg-bottom"
           />
           <cv-text-input
             id="adguard-admin-user"
             :label="$t('settings.admin_user')"
-            :value="adminUser"
+            :model-value="adminUser"
             readonly
             class="mg-bottom"
           />
           <cv-text-input
             id="adguard-admin-password"
             :label="$t('settings.admin_password')"
-            :value="adminPassword"
+            :model-value="adminPassword"
             type="password"
             readonly
             class="mg-bottom"
@@ -53,7 +53,7 @@
             id="adguard-doh-url"
             :label="$t('settings.doh_url')"
             :helper-text="$t('settings.doh_url_helper')"
-            :value="dohUrl"
+            :model-value="dohUrl"
             readonly
             class="mg-bottom"
           />
@@ -68,67 +68,59 @@
         <cv-tile light>
           <cv-form @submit.prevent="configureModule">
             <cv-text-input
+              ref="host"
+              v-model.trim="host"
               :label="$t('settings.adguard_fqdn')"
               placeholder="adguard.example.org"
-              v-model.trim="host"
               class="mg-bottom"
-              :invalid-message="$t(error.host)"
+              :invalid-message="tKey(error.host)"
               :disabled="loading.getConfiguration || loading.configureModule"
-              ref="host"
             >
             </cv-text-input>
             <cv-toggle
+              v-model="isLetsEncryptEnabled"
               value="letsEncrypt"
               :label="$t('settings.lets_encrypt')"
-              v-model="isLetsEncryptEnabled"
               :disabled="loading.getConfiguration || loading.configureModule"
               class="mg-bottom"
             >
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
+              <template #text-left>{{ $t("settings.disabled") }}</template>
+              <template #text-right>{{ $t("settings.enabled") }}</template>
             </cv-toggle>
             <cv-toggle
+              v-model="isHttpToHttpsEnabled"
               value="httpToHttps"
               :label="$t('settings.http_to_https')"
-              v-model="isHttpToHttpsEnabled"
               :disabled="loading.getConfiguration || loading.configureModule"
               class="mg-bottom"
             >
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
+              <template #text-left>{{ $t("settings.disabled") }}</template>
+              <template #text-right>{{ $t("settings.enabled") }}</template>
             </cv-toggle>
             <!-- DNS listen addresses -->
             <cv-text-input
               id="dns-bind-hosts"
+              ref="dns_bind_hosts"
+              v-model.trim="dnsBindHosts"
               :label="$t('settings.dns_bind_hosts')"
               :helper-text="dnsBindHostsHelper"
               placeholder="0.0.0.0"
-              v-model.trim="dnsBindHosts"
-              :invalid-message="$t(error.dns_bind_hosts)"
+              :invalid-message="tKey(error.dns_bind_hosts)"
               :disabled="loading.getConfiguration || loading.configureModule"
               class="mg-bottom"
-              ref="dns_bind_hosts"
             />
             <!-- admin password -->
             <cv-text-input
               id="new-admin-password"
+              ref="admin_password"
+              v-model="newAdminPassword"
               :label="$t('settings.new_admin_password')"
               :helper-text="$t('settings.new_admin_password_helper')"
-              v-model="newAdminPassword"
               type="password"
               autocomplete="new-password"
-              :invalid-message="$t(error.admin_password)"
+              :invalid-message="tKey(error.admin_password)"
               :disabled="loading.getConfiguration || loading.configureModule"
               class="mg-bottom"
-              ref="admin_password"
             />
             <cv-row v-if="error.configureModule">
               <cv-column>
@@ -136,12 +128,13 @@
                   kind="error"
                   :title="$t('action.configure-module')"
                   :description="error.configureModule"
-                  :showCloseButton="false"
+                  :show-close-button="false"
                 />
               </cv-column>
             </cv-row>
             <NsButton
               kind="primary"
+              type="submit"
               :icon="Save20"
               :loading="loading.configureModule"
               :disabled="loading.getConfiguration || loading.configureModule"
@@ -163,7 +156,7 @@ import {
   TaskService,
   IconService,
   PageTitleService,
-} from "@nethserver/ns8-ui-lib";
+} from "../ns8";
 
 export default {
   name: "Settings",
@@ -240,17 +233,13 @@ export default {
     // Start a module task and route its events to the given handlers
     async runTask(action, data, handlers, extra) {
       const eventId = this.getUuid();
-      this.core.$root.$once(`${action}-aborted-${eventId}`, handlers.aborted);
-      this.core.$root.$once(
-        `${action}-completed-${eventId}`,
-        handlers.completed
-      );
-      if (handlers.validationFailed) {
-        this.core.$root.$once(
-          `${action}-validation-failed-${eventId}`,
-          handlers.validationFailed
-        );
-      }
+      this.subscribeTask(action, eventId, {
+        aborted: handlers.aborted,
+        completed: handlers.completed,
+        ...(handlers.validationFailed
+          ? { "validation-failed": handlers.validationFailed }
+          : {}),
+      });
       const res = await to(
         this.createModuleTaskForApp(this.instanceName, {
           action,
@@ -261,7 +250,7 @@ export default {
             ...extra,
             eventId,
           },
-        })
+        }),
       );
       return res[0];
     },
@@ -345,7 +334,7 @@ export default {
         const param = validationError.parameter.split(".")[0];
         let message = "settings." + validationError.error;
         if (param === "dns_bind_hosts" && validationError.value) {
-          message = this.$t(message) + ": " + validationError.value;
+          message = { key: message, detail: validationError.value };
         }
         this.error[param] = message;
         firstInvalid = firstInvalid || param;
@@ -382,7 +371,7 @@ export default {
           }),
           description: this.$t("settings.configuring"),
           isNotificationHidden: false,
-        }
+        },
       );
       if (err) {
         console.error("error creating task configure-module", err);
