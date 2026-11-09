@@ -93,3 +93,13 @@ Before integration, require fresh green existing QEMU install/update legs for
 Debian13 and Rocky9 on the exact head, alongside browser/Validate/Renovate jobs.
 A local bundle/fixture run is not NS8 lifecycle or real deployed browser acceptance.
 No automerge, release dispatch, live deployment or closing of old PRs is authorized.
+
+## Resumed packaging verification
+
+The same-head retry of Publish run 42673262847 reached the real builder and
+exposed a rootless overlay packaging regression after the successful UI build:
+`buildah mount` was outside a Buildah user namespace. Mount, copy and unmount
+now execute together inside `buildah unshare`; the compiled UI and module
+contents are otherwise unchanged. A tool-boundary unit fixture reproduces the
+namespace denial (RED before the fix) and checks the copied UI contents; it is
+not a substitute for actual Buildah packaging or QEMU lifecycle acceptance.

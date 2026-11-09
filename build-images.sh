@@ -30,9 +30,13 @@ container=$(buildah from scratch)
 trap 'buildah rm "${ui_container}" "${container}" >/dev/null' EXIT
 rm -rf ui/dist
 mkdir -p ui/dist
-ui_mount=$(buildah mount "${ui_container}")
-cp -a "${ui_mount}/app/dist/." ui/dist/
-buildah unmount "${ui_container}"
+# Rootless overlay mounts only exist inside Buildah's user namespace. Keep
+# mount, copy and unmount together; the destination remains in the checkout.
+buildah unshare sh -ec '
+  ui_mount=$(buildah mount "$1")
+  trap '\''buildah unmount "$1" >/dev/null'\'' EXIT
+  cp -a "${ui_mount}/app/dist/." "$2/"
+' sh "${ui_container}" "${PWD}/ui/dist"
 
 # Add imageroot directory to the container image
 buildah add "${container}" imageroot /imageroot
