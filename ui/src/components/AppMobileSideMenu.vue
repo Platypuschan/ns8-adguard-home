@@ -14,6 +14,7 @@
 </template>
 
 <script>
+import bus from "../ns8/events";
 import AppSideMenuContent from "@/components/AppSideMenuContent";
 
 export default {
@@ -27,7 +28,7 @@ export default {
   },
   created() {
     // register to logout event
-    this.$root.$on("toggleMobileSideMenu", this.toggleMobileSideMenu);
+    bus.on("toggleMobileSideMenu", this.toggleMobileSideMenu);
   },
   mounted() {
     // prevent glitch: click-outside is incorrectly detected when mobile side menu appears
@@ -35,9 +36,9 @@ export default {
       this.isClickOutsideEnabled = true;
     }, 200);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // remove event listener
-    this.$root.$off("toggleMobileSideMenu", this.toggleMobileSideMenu);
+    bus.off("toggleMobileSideMenu", this.toggleMobileSideMenu);
   },
   methods: {
     toggleMobileSideMenu() {

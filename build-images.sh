@@ -20,23 +20,19 @@ repository_source="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:
 # the module as ADGUARDHOME_IMAGE. pypkg/AdGuardHome.template.yaml comes from
 # the setup wizard of this release; check it when updating.
 adguard_image="docker.io/adguard/adguardhome:v0.107.79@sha256:aba9e3bf0613be3ba3755e1fc311b126e2c24bec25e18b6483894a88283074f0"
-# Keep in sync with the Node.js version used by .github/workflows/validate.yml
-NODE_IMAGE="docker.io/library/node:24.20.0"
-nodebuilder="nodebuilder-adguard-home-${NODE_IMAGE##*:}"
-# Create a new empty container image
+# Both release packaging and CI compile the exact same UI stage.
+# Keep this explicit image pin synchronized with ui/Containerfile (regression-tested).
+NODE_IMAGE="docker.io/library/node:24.22.2-bookworm"
+ui_builder="localhost/adguard-ui-${GITHUB_SHA:-$(git rev-parse --short HEAD)}"
+buildah bud --target ui -t "${ui_builder}" -f ui/Containerfile ui
+ui_container=$(buildah from "${ui_builder}")
 container=$(buildah from scratch)
-
-# Reuse an existing builder container for the same Node.js version, to speed up builds
-if ! buildah containers --format "{{.ContainerName}}" | grep -qx "${nodebuilder}"; then
-	echo "Pulling NodeJS runtime..."
-	buildah from --name "${nodebuilder}" -v "${PWD}:/usr/src:Z" "${NODE_IMAGE}"
-fi
-
-echo "Build static UI files with node..."
-buildah run \
-	--workingdir=/usr/src/ui \
-	"${nodebuilder}" \
-	sh -c "corepack enable && yarn install --immutable && yarn build"
+trap 'buildah rm "${ui_container}" "${container}" >/dev/null' EXIT
+rm -rf ui/dist
+mkdir -p ui/dist
+ui_mount=$(buildah mount "${ui_container}")
+cp -a "${ui_mount}/app/dist/." ui/dist/
+buildah unmount "${ui_container}"
 
 # Add imageroot directory to the container image
 buildah add "${container}" imageroot /imageroot

@@ -107,8 +107,11 @@ jobs:
           "$RUNNER_TEMP/venv/bin/python" -m unittest discover -s tests -p 'test_*.py' -v
 
   ui:
-    name: UI lint and build
+    name: UI production/dev browser regressions
     runs-on: ubuntu-latest
+    env:
+      IBM_TELEMETRY_DISABLED: "true"
+      NS8_CORE_IMAGE: ghcr.io/nethserver/core:latest@sha256:91f910e7e247d5806ce63abc54914edd59558b0bd7669a2337b678c295f3b5c6
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -120,7 +123,7 @@ jobs:
         uses: actions/setup-node@v7
         with:
           # Keep in sync with NODE_IMAGE in build-images.sh
-          node-version: "24.20.0"
+          node-version: "24.22.2"
           cache: yarn
           cache-dependency-path: ui/yarn.lock
 
@@ -134,4 +137,38 @@ jobs:
 
       - name: Build
         run: yarn build
+        working-directory: ui
+
+      - name: Build exact production recipe
+        run: |
+          set -euo pipefail
+          podman build --target ui -t localhost/adguard-ui-ci -f ui/Containerfile ui
+          id="$(podman create --entrypoint /bin/true localhost/adguard-ui-ci)"
+          trap 'podman rm -f "$id" >/dev/null' EXIT
+          podman cp "$id:/app/dist/." ui/dist/
+
+      - name: Exercise actual nonroot developer entrypoint and interactive serve
+        run: python3 .github/scripts/test-ui-dev.py
+
+      - name: Check stack
+        run: yarn test:stack
+        working-directory: ui
+
+      - name: Extract published host stylesheet (image is never executed)
+        run: |
+          set -euo pipefail
+          id="$(podman create --entrypoint /bin/true --image-volume=ignore "$NS8_CORE_IMAGE")"
+          trap 'podman rm -f "$id" >/dev/null' EXIT
+          podman cp "$id:/var/lib/nethserver/cluster/ui/css/core.css" "$RUNNER_TEMP/ns8-core.css"
+
+      - name: Install pinned browser
+        run: yarn playwright install --with-deps chromium
+        working-directory: ui
+
+      - name: Production browser regression (fixture API, real host CSS)
+        run: NS8_CORE_CSS="$RUNNER_TEMP/ns8-core.css" yarn test:e2e
+        working-directory: ui
+
+      - name: Development diagnostics (fixture API, real host CSS)
+        run: NS8_CORE_CSS="$RUNNER_TEMP/ns8-core.css" yarn test:e2e:dev
         working-directory: ui

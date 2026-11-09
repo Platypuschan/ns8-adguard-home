@@ -45,6 +45,12 @@ const workflow = await rule({ manager: 'github-actions', depName: 'actions/check
 check('major dashboard approval', [workflow.dependencyDashboardApproval, workflow.automerge], [true, false]);
 check('workflow grouping', workflow.groupName, 'GitHub Actions');
 check('UI grouping', ui.groupName, 'UI non-major dependencies');
+for (const depName of ['vue', '@carbon/vue', 'vue-router', 'vue-i18n', 'vuex', 'vite', 'eslint', 'eslint-plugin-vue', 'prettier', '@vue/eslint-config-prettier', 'eslint-plugin-prettier']) {
+  const major = await rule({ manager: 'npm', depName, packageFile: 'ui/package.json', updateType: 'major' });
+  check(`UI major coordinated ${depName}`, [major.groupName, major.dependencyDashboardApproval, major.automerge], ['UI coordinated majors', true, false]);
+}
+const carbon = await rule({ manager: 'npm', depName: 'carbon-components', packageFile: 'ui/package.json', updateType: 'major' });
+check('host Carbon10 compatibility gate', carbon.allowedVersions, '<11');
 check('lockfile maintenance enabled', config.lockFileMaintenance.enabled, true);
 const current = (await readFile('CATALOG_VERSION', 'utf8')).trim();
 const parts = current.split('.').map(Number);
