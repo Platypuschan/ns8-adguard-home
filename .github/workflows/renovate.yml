@@ -1,0 +1,32 @@
+name: Renovate policy
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renovate-policy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: Renovate configuration and behavior
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/renovatebot/renovate:44.222.5@sha256:8a4c49ef19bb71bedf4eaa4d1087a31a1793bd53de41478753d2d648e53eed19
+      # Renovate's nonroot default user cannot write runner file commands.
+      options: --user=0
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Validate configuration strictly
+        run: renovate-config-validator --strict renovate.json
+      - name: Native extraction, package rules and release-version regressions
+        run: node .github/scripts/test-renovate.mjs
+      - name: Extract actual repository dependencies without updates
+        run: renovate --platform=local --dry-run=extract --require-config=required --onboarding=false
