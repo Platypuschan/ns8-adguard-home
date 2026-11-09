@@ -19,7 +19,7 @@ repository_source="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:
 # Official AdGuard Home release image, pinned by digest. NS8 passes it to
 # the module as ADGUARDHOME_IMAGE. pypkg/AdGuardHome.template.yaml comes from
 # the setup wizard of this release; check it when updating.
-adguard_image="docker.io/adguard/adguardhome:v0.107.79@sha256:aba9e3bf0613be3ba3755e1fc311b126e2c24bec25e18b6483894a88283074f0"
+adguard_image="docker.io/adguard/adguardhome:v0.107.80@sha256:e2e1b48c832f7705be915873f95de0d5114de573736441d7f2923a8a6293027c"
 # Both release packaging and CI compile the exact same UI stage.
 # Keep this explicit image pin synchronized with ui/Containerfile (regression-tested).
 NODE_IMAGE="docker.io/library/node:24.22.2-bookworm"

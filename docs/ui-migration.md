@@ -27,7 +27,7 @@ No old PR is merged or closed by this branch.
 
 #21 (Ubuntu runner) and #28 (Robot browser image) are independent proposals and
 are not UI migration claims. Compatible/runtime integration is a separate branch.
-This branch's CATALOG_VERSION 0.1.3 is a candidate bump from its original main;
+This branch's CATALOG_VERSION 0.1.4 is the bump after merging the compatible updates (0.1.3) into main;
 the integrator must allocate a fresh version after other source changes merge.
 
 ## Why not retain ns8-ui-lib?
