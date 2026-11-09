@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "automerge": false,
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 2,
+  "prHourlyLimit": 2,
+  "rebaseWhen": "behind-base-branch",
+  "lockFileMaintenance": {"enabled": true},
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Shell image pins (runtime, Node builder, Robot runner)",
+      "managerFilePatterns": ["/^build-images\\.sh$/", "/^test-module\\.sh$/"],
+      "matchStrings": ["(?:adguard_image|NODE_IMAGE|RUNNER_IMAGE)=\"(?<depName>[^\":@\\s]+):(?<currentValue>[^\"@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\""],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Pinned Python test dependencies",
+      "managerFilePatterns": ["/^test-module\\.sh$/", "/^\\.github/workflows/validate\\.yml$/"],
+      "matchStrings": ["(?<depName>robotframework-sshlibrary|PyYAML)==(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "datasourceTemplate": "pypi"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Image-affecting changes must pass the existing catalog version gate",
+      "matchFileNames": ["ui/**", "build-images.sh", "imageroot/**"],
+      "bumpVersions": [{
+        "name": "Module release version",
+        "filePatterns": ["CATALOG_VERSION"],
+        "matchStrings": ["^(?<version>[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?)\\s*$"],
+        "bumpType": "patch"
+      }]
+    },
+    {
+      "description": "Coordinate production, dev-container and CI Node; retain tested major",
+      "matchPackageNames": ["node", "docker.io/library/node", "actions/node-versions"],
+      "groupName": "Node.js toolchain",
+      "allowedVersions": "<25"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "UI non-major dependencies"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action", "workflow", "github-runner"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Keep AdGuard Home runtime tags immutable",
+      "matchPackageNames": ["docker.io/adguard/adguardhome"],
+      "pinDigests": true
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    }
+  ]
+}

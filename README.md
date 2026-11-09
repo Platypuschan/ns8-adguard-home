@@ -177,6 +177,63 @@ compare `imageroot/pypkg/AdGuardHome.template.yaml` with the file the setup
 wizard of the new release writes. Existing installations keep their file;
 AdGuard Home migrates it to a newer schema itself.
 
+## Dependency updates (Renovate)
+
+The existing `renovate/configure` onboarding PR prepares automatic **proposals**;
+regular updates start only after a maintainer reviews and merges it and the
+installed Renovate app runs again. Automerge is disabled. Major updates require
+Dependency Dashboard approval before normal PR creation; vulnerability alerts
+may bypass Renovate's normal approval/rate limits but still require manual merge.
+At most two regular update PRs are open, with two created per hour.
+
+Renovate is the only dependency updater configured here:
+
+| Input | Owner / policy |
+| --- | --- |
+| AdGuard image tag and digest in `build-images.sh` | Shell regex manager, Docker datasource; retain digest pinning |
+| Node in `build-images.sh`, `ui/Containerfile`, setup-node | Shell, Dockerfile and Actions managers, one Node.js toolchain group; stay on tested Node 24 (Corepack required) |
+| `ui/package.json`, `ui/yarn.lock`, Yarn `packageManager` | npm manager; non-major UI updates grouped, weekly lockfile maintenance |
+| Actions, reusable workflows, runner images and policy-test Renovate image | GitHub Actions manager |
+| Robot browser runner in `test-module.sh` | Shell regex manager, Docker datasource |
+| SSHLibrary in `test-module.sh`, PyYAML in `validate.yml` | Python-pin regex manager, PyPI datasource; PyYAML is a test pin, not an NS8 host update |
+
+NS8 agent/system dependencies and packages inside the upstream AdGuard image
+remain owned by NS8/upstream, not by a second package-refresh bot in this repo.
+The minimum-core compatibility declaration is manually reviewed, not an updater
+input. README version examples and template provenance are documentation, not
+runtime pins; review them with each AdGuard proposal. In particular, compare the
+setup-wizard template and retain the Range-header mitigation until the new
+runtime's Go version/fix is verified.
+
+Image-affecting updates under `ui/**`, `imageroot/**` or `build-images.sh`
+use native Renovate `bumpVersions` to raise `CATALOG_VERSION` by one patch,
+including lockfile-only refreshes and grouped changes. Test/workflow-only updates
+do not raise it. Proposals rebase when behind main; the existing catalog-version
+check remains the release gate against parallel proposals reusing a version.
+This onboarding changes neither the module version nor dependency versions.
+
+Before merging a dependency PR, review its diff, UI lint/build, catalog version,
+and QEMU install/update tests on Rocky 9 and Debian 13. Main-branch build and
+tested-version promotion remain responsible for publication; Renovate itself
+neither publishes a release nor deploys an installed module. The main branch is
+currently unprotected: manual merge gates are policy, not enforced branch rules.
+
+`Renovate policy` CI uses official Renovate 44.222.5 pinned by image digest for
+strict validation, native RE2 extraction, resolved package-rule tests and actual
+release-bump behavior (manifest, lockfile, mixed group, digest and no-op cases).
+Local reproduction:
+
+```sh
+image=ghcr.io/renovatebot/renovate:44.222.5@sha256:8a4c49ef19bb71bedf4eaa4d1087a31a1793bd53de41478753d2d648e53eed19
+podman run --rm --user=0 -v "$PWD:/work:ro" -w /work --entrypoint renovate-config-validator "$image" --strict renovate.json
+podman run --rm --user=0 -v "$PWD:/work:ro" -w /work --entrypoint node "$image" .github/scripts/test-renovate.mjs
+podman run --rm --user=0 -v "$PWD:/work:ro" -w /work --entrypoint renovate "$image" --platform=local --dry-run=extract --require-config=required --onboarding=false
+```
+
+Extraction runs without credentials or registry lookups; the GitHub-token warning
+for Actions dependencies is expected locally, not evidence of successful update
+lookups. The hosted app supplies its own authentication after activation.
+
 ## Credits
 
 AdGuard Home is developed by AdGuard Software Ltd. under the GPL-3.0.
