@@ -97,6 +97,12 @@ Resolves
     Should Be Equal As Integers    ${rc}    0    DNS query failed: ${output}
     Should Be Equal    ${output}    ${expected}
 
+Resolves upstream
+    [Arguments]    ${server}    ${name}
+    ${output}    ${rc} =    Query    ${server}    ${name}
+    Should Be Equal As Integers    ${rc}    0    DNS query failed: ${output}
+    Should Match Regexp    ${output}    ^rcode=0 a=[0-9.]+
+
 Container id
     ${id} =    Execute Command    runagent -m ${module_id} podman inspect --format {{.Id}} adguard
     RETURN    ${id}
@@ -205,9 +211,8 @@ DNS is served on port 53
     Resolves    127.0.0.1    ${BLOCKED}    rcode=0 a=0.0.0.0    tcp
     Resolves    ${node_ip}    ${BLOCKED}    rcode=0 a=0.0.0.0
     # Forwarded to the default upstream
-    ${output}    ${rc} =    Query    ${node_ip}    example.com
-    Should Be Equal As Integers    ${rc}    0    DNS query failed: ${output}
-    Should Match Regexp    ${output}    ^rcode=0 a=[0-9.]+
+    # The first upstream lookup on a fresh CI node can exceed the 5 s client timeout.
+    Wait Until Keyword Succeeds    60 seconds    3 seconds    Resolves upstream    ${node_ip}    example.com
 
 DNS-over-HTTPS is served through Traefik
     ${wire} =    Execute Command    python3 /root/dnsquery.py - ${BLOCKED} doh-wire
