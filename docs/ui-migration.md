@@ -76,7 +76,7 @@ Observed RED before fixes:
 - sidebar stayed highlighted on Status after real parent navigation to Settings.
 
 Production packaging and CI now compile the same `ui/Containerfile --target ui`
-with Node 24.22.2-bookworm and project-pinned Yarn 4.18.0. `ui/build.sh` asserts
+with Node 24.22.2-bookworm and project-pinned Yarn 4.18.1. `ui/build.sh` asserts
 Yarn equality, installs immutably, lints, checks installed manifests and builds.
 The context-free dev stage installs Yarn before the bind mount. Its actual
 nonroot build/watch entrypoint and interactive serve are smoke-tested using a
