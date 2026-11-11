@@ -17,7 +17,7 @@ jobs:
     name: Renovate configuration and behavior
     runs-on: ubuntu-26.04
     container:
-      image: ghcr.io/renovatebot/renovate:44.227.1@sha256:c6fca2705f83fc8e3fe6069a3284daba9e98f691cb9327bc4a736730d5a189d9
+      image: ghcr.io/renovatebot/renovate:44.227.4@sha256:fe058db9710840a4821f20190b3769e3ce709a049b8640aa2bf5f044969fe702
       # Renovate's nonroot default user cannot write runner file commands.
       options: --user=0
     steps:
