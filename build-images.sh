@@ -22,7 +22,7 @@ repository_source="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:
 adguard_image="docker.io/adguard/adguardhome:v0.107.80@sha256:e2e1b48c832f7705be915873f95de0d5114de573736441d7f2923a8a6293027c"
 # Both release packaging and CI compile the exact same UI stage.
 # Keep this explicit image pin synchronized with ui/Containerfile (regression-tested).
-NODE_IMAGE="docker.io/library/node:24.22.2-bookworm"
+NODE_IMAGE="docker.io/library/node:24.22.3-bookworm"
 ui_builder="localhost/adguard-ui-${GITHUB_SHA:-$(git rev-parse --short HEAD)}"
 buildah bud --target ui -t "${ui_builder}" -f ui/Containerfile ui
 ui_container=$(buildah from "${ui_builder}")
