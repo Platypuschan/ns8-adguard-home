@@ -1,4 +1,4 @@
-FROM node:24.22.2-bookworm AS toolchain
+FROM node:24.22.3-bookworm AS toolchain
 # The devcontainer has no package.json until its bind mount is attached.
 RUN npm install --global --force @yarnpkg/cli-dist@4.18.1
 WORKDIR /app
