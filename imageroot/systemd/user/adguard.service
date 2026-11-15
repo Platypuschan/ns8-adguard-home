@@ -27,6 +27,12 @@ ExecStartPre=/bin/rm -f %t/adguard.pid %t/adguard.ctr-id
 # Without a configuration AdGuard Home would start its setup wizard on
 # 0.0.0.0:3000; configure-module writes the configuration first.
 ExecStartPre=/usr/bin/test -s %E/state/conf/AdGuardHome.yaml
+# AdGuard Home requires a private work directory (0700, checked by its
+# permcheck at start-up). A new Podman volume is created with 0755, so the
+# mode is set from inside the user namespace, where the volume is owned by
+# the container's root.
+ExecStartPre=/usr/bin/podman volume create --ignore adguard-work
+ExecStartPre=/bin/sh -c '/usr/bin/podman unshare chmod 0700 "$$(/usr/bin/podman volume inspect adguard-work --format "{{.Mountpoint}}")"'
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/adguard.pid \
     --cidfile %t/adguard.ctr-id --cgroups=no-conmon \
     --replace -d --name adguard \
